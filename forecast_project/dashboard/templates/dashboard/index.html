@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Demand Forecasting</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <style>
+        :root {
+            --bg: #f0f2f5;
+            --card: #ffffff;
+            --navbar: #1a1a2e;
+            --text: #1a1a2e;
+            --subtext: #888;
+            --border: #e8e8e8;
+            --tab-active: #1a1a2e;
+            --tab-text: #fff;
+            --tab-inact: #ddd;
+            --tab-itxt: #555;
+            --blue: #2980b9;
+            --orange: #e67e22;
+            --green: #2ecc71;
+            --red: #e74c3c;
+            --shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f0f1a;
+            --card: #1a1a2e;
+            --navbar: #0a0a14;
+            --text: #e8e8f0;
+            --subtext: #888;
+            --border: #2a2a3e;
+            --tab-active: #4a90d9;
+            --tab-text: #fff;
+            --tab-inact: #2a2a3e;
+            --tab-itxt: #aaa;
+            --shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        /* Navbar */
+        .navbar {
+            background: var(--navbar);
+            color: #fff;
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .navbar h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .navbar span {
+            font-size: 12px;
+            opacity: 0.6;
+        }
+
+        /* Dark mode toggle */
+        .dark-toggle {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .dark-toggle:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 28px auto;
+            padding: 0 24px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab-btn {
+            padding: 10px 24px;
+            border: none;
+            cursor: pointer;
+            background: transparent;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--tab-itxt);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab-btn.active {
+            color: var(--blue);
+            border-bottom: 2px solid var(--blue);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px 24px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--border);
+        }
+
+        .card.green {
+            border-left-color: var(--green);
+        }
+
+        .card.red {
+            border-left-color: var(--red);
+        }
+
+        .card.blue {
+            border-left-color: var(--blue);
+        }
+
+        .card.orange {
+            border-left-color: var(--orange);
+        }
+
+        .card .label {
+            font-size: 11px;
+            color: var(--subtext);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .card .value {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .card .sub {
+            font-size: 12px;
+            color: var(--subtext);
+            margin-top: 4px;
+        }
+
+        /* Controls */
+        .controls {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            box-shadow: var(--shadow);
+        }
+
+        .controls label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .controls select,
+        .controls input {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 14px;
+            background: var(--bg);
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border-radius: 8px;
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Chart card */
+        .chart-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .chart-card h2 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        /* Alert banner */
+        .alert-banner {
+            background: #fdecea;
+            border: 1px solid #f5c6cb;
+            color: #c0392b;
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        [data-theme="dark"] .alert-banner {
+            background: #3a1a1a;
+            border-color: #7a2a2a;
+            color: #f08080;
+        }
+
+        /* Alerts table */
+        .table-wrap {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .table-wrap h2 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--subtext);
+            padding: 8px 12px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 12px;
+            font-size: 14px;
+            color: var(--text);
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge.High {
+            background: #fdecea;
+            color: #c0392b;
+        }
+
+        .badge.Medium {
+            background: #fef9e7;
+            color: #d68910;
+        }
+
+        .badge.Low {
+            background: #eafaf1;
+            color: #1e8449;
+        }
+
+        [data-theme="dark"] .badge.High {
+            background: #3a1515;
+            color: #f08080;
+        }
+
+        [data-theme="dark"] .badge.Medium {
+            background: #3a3010;
+            color: #f0c040;
+        }
+
+        [data-theme="dark"] .badge.Low {
+            background: #153020;
+            color: #60e090;
+        }
+
+        /* Product forecast loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--subtext);
+            font-size: 14px;
+        }
+
+        /* Mini cards for product tab */
+        .mini-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .mini-card {
+            background: var(--card);
+            border-radius: 10px;
+            padding: 16px 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .mini-card .label {
+            font-size: 11px;
+            color: var(--subtext);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .mini-card .value {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <h1>📦 Smart Demand Forecasting</h1>
+        <div class="navbar-right">
+            <span>UK E-Commerce · Dec 2010 – Dec 2011</span>
+            <button class="dark-toggle" onclick="toggleDark()">🌙 Dark Mode</button>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('overview', this)">📊 Overview</button>
+            <button class="tab-btn" onclick="switchTab('forecast', this)">🔍 Product Forecast</button>
+            <button class="tab-btn" onclick="switchTab('alerts', this)">⚠️ Stockout Alerts</button>
+        </div>
+
+        <!-- ═══════════════ TAB 1: OVERVIEW ═══════════════ -->
+        <div id="tab-overview" class="tab-content active">
+
+            {% if stockout_alert %}
+            <div class="alert-banner">
+                ⚠️ Stockout Risk — Peak demand of {{ peak_qty }} units predicted on {{ peak_day }}. Consider restocking.
+            </div>
+            {% endif %}
+
+            <div class="cards">
+                <div class="card blue">
+                    <div class="label">Forecast Period</div>
+                    <div class="value">{{ days }} days</div>
+                    <div class="sub">selected window</div>
+                </div>
+                <div class="card green">
+                    <div class="label">Total Predicted Demand</div>
+                    <div class="value">{{ total_predicted }}</div>
+                    <div class="sub">units forecasted</div>
+                </div>
+                <div class="card orange">
+                    <div class="label">Avg Daily Demand</div>
+                    <div class="value">{{ avg_daily }}</div>
+                    <div class="sub">units per day</div>
+                </div>
+                <div class="card {% if stockout_alert %}red{% else %}green{% endif %}">
+                    <div class="label">Peak Demand Day</div>
+                    <div class="value">{{ peak_qty }}</div>
+                    <div class="sub">{{ peak_day }}</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <label>Forecast Window:</label>
+                <select id="days-select">
+                    <option value="7" {% if days == 7 %}selected{% endif %}>Next 7 days</option>
+                    <option value="14" {% if days == 14 %}selected{% endif %}>Next 14 days</option>
+                    <option value="30" {% if days == 30 %}selected{% endif %}>Next 30 days</option>
+                    <option value="60" {% if days == 60 %}selected{% endif %}>Next 60 days</option>
+                </select>
+                <button class="btn" onclick="updateForecast()">Update Forecast</button>
+            </div>
+
+            <div class="chart-card">
+                <h2>📈 Historical Demand + Forecast (with Festival Markers)</h2>
+                <canvas id="overviewChart" height="90"></canvas>
+            </div>
+        </div>
+
+        <!-- ═══════════════ TAB 2: PRODUCT FORECAST ═══════════════ -->
+        <div id="tab-forecast" class="tab-content">
+            <div class="controls">
+                <label>Product:</label>
+                <select id="product-select">
+                    <option value="">-- Select a product --</option>
+                    {% for p in products %}
+                    <option value="{{ p }}">{{ p }}</option>
+                    {% endfor %}
+                </select>
+                <label>Days:</label>
+                <select id="product-days">
+                    <option value="7">7 days</option>
+                    <option value="14">14 days</option>
+                    <option value="30" selected>30 days</option>
+                    <option value="60">60 days</option>
+                </select>
+                <button class="btn" onclick="loadProductForecast()">Get Forecast</button>
+            </div>
+
+            <div id="product-mini-cards" class="mini-cards" style="display:none;">
+                <div class="mini-card">
+                    <div class="label">Total Predicted</div>
+                    <div class="value" id="prod-total">—</div>
+                </div>
+                <div class="mini-card">
+                    <div class="label">Avg Daily</div>
+                    <div class="value" id="prod-avg">—</div>
+                </div>
+                <div class="mini-card">
+                    <div class="label">Peak Predicted</div>
+                    <div class="value" id="prod-peak">—</div>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h2 id="product-chart-title">📦 Select a product to view forecast</h2>
+                <div id="product-loading" class="loading" style="display:none;">Loading forecast...</div>
+                <canvas id="productChart" height="90"></canvas>
+            </div>
+        </div>
+
+        <!-- ═══════════════ TAB 3: ALERTS ═══════════════ -->
+        <div id="tab-alerts" class="tab-content">
+            <div class="table-wrap">
+                <h2>⚠️ Stockout Risk — Top Products</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Avg Daily Demand</th>
+                            <th>Recent 7-Day Avg</th>
+                            <th>Trend</th>
+                            <th>Risk Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in alerts %}
+                        <tr>
+                            <td>{{ a.product }}</td>
+                            <td>{{ a.avg_demand }}</td>
+                            <td>{{ a.recent_demand }}</td>
+                            <td>{{ a.trend }}</td>
+                            <td><span class="badge {{ a.risk }}">{{ a.risk }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ── Data from Django ────────────────────────────────────
+        const histDates = {{ hist_dates| safe }};
+        const histQty = {{ hist_quantities| safe }};
+        const futureDates = {{ future_dates| safe }};
+        const futureQty = {{ future_quantities| safe }};
+        const festivals = {{ festivals| safe }};
+
+        // ── Festival annotations ────────────────────────────────
+        const allOverviewLabels = [...histDates, ...futureDates];
+        const annotations = {};
+        festivals.forEach((f, i) => {
+            const idx = allOverviewLabels.indexOf(f.date);
+            if (idx === -1) return;
+            annotations[`fest${i}`] = {
+                type: 'line',
+                xMin: idx, xMax: idx,
+                borderColor: 'rgba(231, 76, 60, 0.6)',
+                borderWidth: 1.5,
+                borderDash: [4, 4],
+                label: {
+                    display: true,
+                    content: f.name,
+                    position: 'start',
+                    font: { size: 10 },
+                    color: '#e74c3c',
+                    backgroundColor: 'rgba(255,255,255,0.8)',
+                    padding: 3,
+                }
+            };
+        });
+
+        // ── Overview chart ──────────────────────────────────────
+        const histData = [...histQty, ...new Array(futureDates.length).fill(null)];
+        const foreData = [...new Array(histDates.length).fill(null), ...futureQty];
+
+        const overviewCtx = document.getElementById('overviewChart').getContext('2d');
+        new Chart(overviewCtx, {
+            type: 'line',
+            data: {
+                labels: allOverviewLabels,
+                datasets: [
+                    {
+                        label: 'Historical Demand',
+                        data: histData,
+                        borderColor: '#2980b9',
+                        backgroundColor: 'rgba(41,128,185,0.08)',
+                        borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3
+                    },
+                    {
+                        label: 'Predicted Demand',
+                        data: foreData,
+                        borderColor: '#e67e22',
+                        backgroundColor: 'rgba(230,126,34,0.08)',
+                        borderWidth: 2, borderDash: [6, 3],
+                        pointRadius: 3, fill: true, tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { position: 'top' },
+                    annotation: { annotations }
+                },
+                scales: {
+                    x: { ticks: { maxTicksLimit: 12, maxRotation: 45 } },
+                    y: { title: { display: true, text: 'Quantity Sold' }, beginAtZero: true }
+                }
+            }
+        });
+
+        // ── Product forecast chart ──────────────────────────────
+        let productChart = null;
+
+        function loadProductForecast() {
+            const product = document.getElementById('product-select').value;
+            const days = document.getElementById('product-days').value;
+
+            if (!product) { alert('Please select a product first.'); return; }
+
+            document.getElementById('product-loading').style.display = 'block';
+            document.getElementById('product-chart-title').textContent = `Loading forecast for ${product}...`;
+            document.getElementById('product-mini-cards').style.display = 'none';
+
+            fetch(`/api/product-forecast/?product=${encodeURIComponent(product)}&days=${days}`)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('product-loading').style.display = 'none';
+                    document.getElementById('product-chart-title').textContent = `📦 ${product}`;
+                    document.getElementById('product-mini-cards').style.display = 'grid';
+                    document.getElementById('prod-total').textContent = data.total;
+                    document.getElementById('prod-avg').textContent = data.avg;
+                    document.getElementById('prod-peak').textContent = data.peak;
+
+                    const labels = [...data.hist_dates, ...data.future_dates];
+                    const histData = [...data.hist_qty, ...new Array(data.future_dates.length).fill(null)];
+                    const foreData = [...new Array(data.hist_dates.length).fill(null), ...data.future_qty];
+
+                    if (productChart) productChart.destroy();
+                    const ctx = document.getElementById('productChart').getContext('2d');
+                    productChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Historical',
+                                    data: histData,
+                                    borderColor: '#2980b9',
+                                    backgroundColor: 'rgba(41,128,185,0.08)',
+                                    borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3
+                                },
+                                {
+                                    label: 'Forecast',
+                                    data: foreData,
+                                    borderColor: '#e67e22',
+                                    backgroundColor: 'rgba(230,126,34,0.08)',
+                                    borderWidth: 2, borderDash: [6, 3],
+                                    pointRadius: 3, fill: true, tension: 0.3
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: { legend: { position: 'top' } },
+                            scales: {
+                                x: { ticks: { maxTicksLimit: 10, maxRotation: 45 } },
+                                y: { title: { display: true, text: 'Quantity' }, beginAtZero: true }
+                            }
+                        }
+                    });
+                })
+                .catch(() => {
+                    document.getElementById('product-loading').style.display = 'none';
+                    document.getElementById('product-chart-title').textContent = '❌ Failed to load forecast.';
+                });
+        }
+
+        // ── Tab switching ───────────────────────────────────────
+        function switchTab(name, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${name}`).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // ── Dark mode ───────────────────────────────────────────
+        function toggleDark() {
+            const html = document.documentElement;
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            document.querySelector('.dark-toggle').textContent = isDark ? '🌙 Dark Mode' : '☀️ Light Mode';
+        }
+
+        // ── Update forecast window ──────────────────────────────
+        function updateForecast() {
+            const days = document.getElementById('days-select').value;
+            window.location.href = `/?days=${days}`;
+        }
+    </script>
+</body>
+
+</html>
